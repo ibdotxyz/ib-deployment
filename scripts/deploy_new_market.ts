@@ -8,11 +8,11 @@ enum IRM {
   Gov = 'GovIRM'
 }
 
-const crSymbol = 'iUST';
-const crName = 'Iron Bank Axelar Wrapped UST';
-const underlyingAddress = '0x260Bbf5698121EB85e7a74f2E45E16Ce762EbE11';
-const interestRateModel = IRM.Stable;
-const exchangeRate = '0.02';
+const iSymbol = 'iCVX';
+const iName = 'Iron Bank Convex Token';
+const underlyingAddress = '0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B';
+const interestRateModel = IRM.Gov;
+const exchangeRate = '0.01';
 
 
 async function main() {
@@ -27,7 +27,7 @@ async function main() {
   const underlyingDecimal = await underlying.decimals();
   const initialExchangeRate = parseUnits(exchangeRate, 18 + underlyingDecimal - 8);
 
-  const result = await deploy(crSymbol, {
+  const result = await deploy(iSymbol, {
     from: deployer,
     contract: 'CErc20Delegator',
     args: [
@@ -35,8 +35,8 @@ async function main() {
       comptrollerAddress,
       irmAddress,
       initialExchangeRate,
-      crName,
-      crSymbol,
+      iName,
+      iSymbol,
       8,
       cTokenAdminAddress,
       cTokenImplementationAddress,
@@ -44,7 +44,7 @@ async function main() {
     ],
   });
 
-  console.log(crSymbol, 'deployed at:', result.address);
+  console.log(iSymbol, 'deployed at:', result.address);
 }
 
 main()
