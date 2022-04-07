@@ -8,9 +8,9 @@ enum IRM {
   Gov = 'GovIRM'
 }
 
-const iSymbol = 'iCVX';
-const iName = 'Iron Bank Convex Token';
-const underlyingAddress = '0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B';
+const iSymbol = 'iAPE';
+const iName = 'Iron Bank ApeCoin';
+const underlyingAddress = '0x4d224452801ACEd8B2F0aebE155379bb5D594381';
 const interestRateModel = IRM.Gov;
 const exchangeRate = '0.01';
 
