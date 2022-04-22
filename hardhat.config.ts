@@ -20,31 +20,30 @@ const config: HardhatUserConfig = {
     deployer: 0,
     poster: '0xd830A7413CB25FEe57f8115CD64E565B0Be466c3',
     admin: {
-      hardhat: '0x197939c1ca20C2b506d6811d8B6CDB3394471074',
+      hardhat: '0x0501Be0dA35990FbF5c434c29186A7966846c0D5',
       mainnet: '0xA5fC0BbfcD05827ed582869b7254b6f141BA84Eb',
       avalanche: '0xf3472A93B94A17dC20F9Dc9D0D48De42FfbD14f4',
-      fuji: '0x197939c1ca20C2b506d6811d8B6CDB3394471074'
     },
     guardian: {
-      hardhat: '0x197939c1ca20C2b506d6811d8B6CDB3394471074',
+      hardhat: '0x0501Be0dA35990FbF5c434c29186A7966846c0D5',
       mainnet: '0x9d960dAe0639C95a0C822C9d7769d19d30A430Aa',
-      avalanche: '0x197939c1ca20C2b506d6811d8B6CDB3394471074',
-      fuji: '0x197939c1ca20C2b506d6811d8B6CDB3394471074'
+      avalanche: '0x0501Be0dA35990FbF5c434c29186A7966846c0D5',
+    },
+    timelock: {
+      mainnet: '0x5b12f04e22384B01f42Ed14Da23eAcd21f14AC17',
     },
     nativeUsdAggregator: {
       hardhat: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
       avalanche: '0x0A77230d17318075983913bC2145DB16C7366156',
-      fuji: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
     },
     wrappedNative: {
       avalanche: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
-      fuji: '0xd00ae08403B9bbb9124bB305C09058E32C39A48c',
     }
   },
   networks: {
     hardhat: {
       forking: {
-        url: 'https://api.avax.network/ext/bc/C/rpc'
+        url: `https://mainnet.infura.io/v3/${process.env.INFURA_TOKEN}`
       }
     },
     mainnet: {
@@ -68,13 +67,10 @@ const config: HardhatUserConfig = {
       url: 'https://bsc-dataseed.binance.org/',
       accounts: process.env.DEPLOY_PRIVATE_KEY == undefined ? [] : [`0x${process.env.DEPLOY_PRIVATE_KEY}`]
     },
-    ftm: {
+    fantom: {
       url: 'https://rpc.ftm.tools/',
       accounts: process.env.DEPLOY_PRIVATE_KEY == undefined ? [] : [`0x${process.env.DEPLOY_PRIVATE_KEY}`]
     }
-  },
-  etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY
   }
 };
 
