@@ -22,12 +22,14 @@ const config: HardhatUserConfig = {
     admin: {
       hardhat: '0x0501Be0dA35990FbF5c434c29186A7966846c0D5',
       mainnet: '0xA5fC0BbfcD05827ed582869b7254b6f141BA84Eb',
+      fantom: '0xA5fC0BbfcD05827ed582869b7254b6f141BA84Eb',
       avalanche: '0xf3472A93B94A17dC20F9Dc9D0D48De42FfbD14f4',
     },
     guardian: {
       hardhat: '0x0501Be0dA35990FbF5c434c29186A7966846c0D5',
       mainnet: '0x9d960dAe0639C95a0C822C9d7769d19d30A430Aa',
-      avalanche: '0x0501Be0dA35990FbF5c434c29186A7966846c0D5',
+      fantom: '0x9d960dAe0639C95a0C822C9d7769d19d30A430Aa',
+      avalanche: '0x93C220cf1Db6ea5Ab593180ccffA7C0C63A9767E',
     },
     timelock: {
       mainnet: '0x5b12f04e22384B01f42Ed14Da23eAcd21f14AC17',
