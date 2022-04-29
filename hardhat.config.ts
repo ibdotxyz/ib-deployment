@@ -22,14 +22,18 @@ const config: HardhatUserConfig = {
     admin: {
       hardhat: '0x197939c1ca20C2b506d6811d8B6CDB3394471074',
       mainnet: '0xA5fC0BbfcD05827ed582869b7254b6f141BA84Eb',
+      fantom: '0xA5fC0BbfcD05827ed582869b7254b6f141BA84Eb',
       avalanche: '0xf3472A93B94A17dC20F9Dc9D0D48De42FfbD14f4',
       fuji: '0x197939c1ca20C2b506d6811d8B6CDB3394471074'
     },
     guardian: {
       hardhat: '0x197939c1ca20C2b506d6811d8B6CDB3394471074',
       mainnet: '0x9d960dAe0639C95a0C822C9d7769d19d30A430Aa',
-      avalanche: '0x197939c1ca20C2b506d6811d8B6CDB3394471074',
-      fuji: '0x197939c1ca20C2b506d6811d8B6CDB3394471074'
+      fantom: '0x9d960dAe0639C95a0C822C9d7769d19d30A430Aa',
+      avalanche: '0x93C220cf1Db6ea5Ab593180ccffA7C0C63A9767E',
+    },
+    timelock: {
+      mainnet: '0x5b12f04e22384B01f42Ed14Da23eAcd21f14AC17',
     },
     nativeUsdAggregator: {
       hardhat: '0x5498BB86BC934c8D34FDA08E81D444153d0D06aD',
@@ -72,9 +76,6 @@ const config: HardhatUserConfig = {
       url: 'https://rpc.ftm.tools/',
       accounts: process.env.DEPLOY_PRIVATE_KEY == undefined ? [] : [`0x${process.env.DEPLOY_PRIVATE_KEY}`]
     }
-  },
-  etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY
   }
 };
 
