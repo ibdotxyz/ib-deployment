@@ -109,6 +109,12 @@
           "internalType": "contract CToken",
           "name": "cToken",
           "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "force",
+          "type": "bool"
         }
       ],
       "name": "MarketDelisted",
@@ -189,25 +195,6 @@
       "inputs": [
         {
           "indexed": false,
-          "internalType": "address",
-          "name": "oldBorrowCapGuardian",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "newBorrowCapGuardian",
-          "type": "address"
-        }
-      ],
-      "name": "NewBorrowCapGuardian",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
           "internalType": "contract CToken",
           "name": "cToken",
           "type": "address"
@@ -270,6 +257,25 @@
         }
       ],
       "name": "NewCollateralFactor",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "oldCreditLimitManager",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newCreditLimitManager",
+          "type": "address"
+        }
+      ],
+      "name": "NewCreditLimitManager",
       "type": "event"
     },
     {
@@ -368,25 +374,6 @@
       "type": "event"
     },
     {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "oldSupplyCapGuardian",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "newSupplyCapGuardian",
-          "type": "address"
-        }
-      ],
-      "name": "NewSupplyCapGuardian",
-      "type": "event"
-    },
-    {
       "constant": false,
       "inputs": [
         {
@@ -423,6 +410,11 @@
           "internalType": "contract CToken",
           "name": "cToken",
           "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "force",
+          "type": "bool"
         }
       ],
       "name": "_delistMarket",
@@ -444,21 +436,6 @@
       ],
       "payable": false,
       "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "newBorrowCapGuardian",
-          "type": "address"
-        }
-      ],
-      "name": "_setBorrowCapGuardian",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -554,6 +531,21 @@
         }
       ],
       "name": "_setCreditLimit",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newCreditLimitManager",
+          "type": "address"
+        }
+      ],
+      "name": "_setCreditLimitManager",
       "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",
@@ -746,21 +738,6 @@
           "type": "bool"
         }
       ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "newSupplyCapGuardian",
-          "type": "address"
-        }
-      ],
-      "name": "_setSupplyCapGuardian",
-      "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1191,6 +1168,21 @@
     },
     {
       "constant": true,
+      "inputs": [],
+      "name": "creditLimitManager",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
       "inputs": [
         {
           "internalType": "address",
@@ -1535,6 +1527,27 @@
         }
       ],
       "name": "isMarketListed",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "cTokenAddress",
+          "type": "address"
+        }
+      ],
+      "name": "isMarketListedOrDelisted",
       "outputs": [
         {
           "internalType": "bool",
