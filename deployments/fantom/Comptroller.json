@@ -404,6 +404,27 @@
       "type": "function"
     },
     {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "_creditLimits",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "constant": false,
       "inputs": [
         {
@@ -1186,33 +1207,12 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "protocol",
+          "name": "",
           "type": "address"
         },
         {
           "internalType": "address",
-          "name": "market",
-          "type": "address"
-        }
-      ],
-      "name": "creditLimits",
-      "outputs": [
-        {
-          "internalType": "uint256",
           "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "protocol",
           "type": "address"
         }
       ],
