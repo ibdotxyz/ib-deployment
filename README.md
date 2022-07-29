@@ -42,6 +42,13 @@ Fill up the crToken address, price feed source, reserve factors, etc. before exe
 
 ## Verification
 
-    npx hardhat --network <NETWORK> sourcify
+    npx hardhat etherscan-verify --network <NETWORK> [--api-key <ETHERSCAN_API_KEY>]
+
+This will verify all deployed contract under `deployments/<NETWORK>` on etherscan.
+See [hardhat-deploy](https://github.com/wighawag/hardhat-deploy#4-hardhat-etherscan-verify) for more details.
+
+Note: While verifying contracts under `compound-protocol`, `--license BSD-3-Clause --force-license` is required to avoid unsupported license error.
+
+    npx hardhat etherscan-verify --network <NETWORK> --license BSD-3-Clause --force-license [--api-key <ETHERSCAN_API_KEY>]
 
 Note: CWrappedNativeDelegator and CErc20Delegator need to verify manually by uploading the flatten source code `CWrappedNativeDelegatorFlatten.sol` and `CErc20DelegatorFlatten.sol`
