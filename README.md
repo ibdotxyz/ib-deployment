@@ -1,9 +1,9 @@
-# Cream Finance Deployment Script
+# Iron Bank Deployment Script
 
 ## Installation
 
-    git clone https://github.com/CreamFi/cream-deployment
-    cd cream-deployment
+    git clone https://github.com/ibdotxyz/ib-deployment
+    cd ib-deployment
     yarn install
 
 ## Setup
