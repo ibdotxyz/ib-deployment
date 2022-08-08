@@ -50,28 +50,44 @@ const config: HardhatUserConfig = {
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_TOKEN}`,
-      accounts: process.env.DEPLOY_PRIVATE_KEY == undefined ? [] : [`0x${process.env.DEPLOY_PRIVATE_KEY}`]
+      accounts: [`0x${process.env.DEPLOY_PRIVATE_KEY ?? ''}`]
     },
     arbitrum: {
       url: 'https://arb1.arbitrum.io/rpc',
-      accounts: process.env.DEPLOY_PRIVATE_KEY == undefined ? [] : [`0x${process.env.DEPLOY_PRIVATE_KEY}`]
+      accounts: [`0x${process.env.DEPLOY_PRIVATE_KEY ?? ''}`]
     },
     avalanche: {
       url: 'https://api.avax.network/ext/bc/C/rpc',
       chainId: 43114,
-      accounts: process.env.DEPLOY_PRIVATE_KEY == undefined ? [] : [`0x${process.env.DEPLOY_PRIVATE_KEY}`]
+      accounts: [`0x${process.env.DEPLOY_PRIVATE_KEY ?? ''}`]
     },
     polygon: {
       url: 'https://polygon-rpc.com',
-      accounts: process.env.DEPLOY_PRIVATE_KEY == undefined ? [] : [`0x${process.env.DEPLOY_PRIVATE_KEY}`]
+      accounts: [`0x${process.env.DEPLOY_PRIVATE_KEY ?? ''}`]
     },
     bsc: {
       url: 'https://bsc-dataseed.binance.org/',
-      accounts: process.env.DEPLOY_PRIVATE_KEY == undefined ? [] : [`0x${process.env.DEPLOY_PRIVATE_KEY}`]
+      accounts: [`0x${process.env.DEPLOY_PRIVATE_KEY ?? ''}`]
     },
     fantom: {
       url: 'https://rpc.ftm.tools/',
-      accounts: process.env.DEPLOY_PRIVATE_KEY == undefined ? [] : [`0x${process.env.DEPLOY_PRIVATE_KEY}`]
+      accounts: [`0x${process.env.DEPLOY_PRIVATE_KEY ?? ''}`]
+    },
+    op: {
+      url: `https://optimism-mainnet.infura.io/v3/${process.env.INFURA_TOKEN}`,
+      accounts: [`0x${process.env.DEPLOY_PRIVATE_KEY ?? ''}`]
+    },
+    kovOp: {
+      url: 'https://kovan.optimism.io',
+      accounts: [`0x${process.env.TESTNET_PRIVATE_KEY ?? ''}`]
+    }
+  },
+  etherscan: {
+    apiKey: {
+        mainnet: process.env.ETHERSCAN_API_KEY ?? '',
+        avalanche: process.env.SNOWSCAN_API_KEY ?? '',
+        opera: process.env.FTMSCAN_API_KEY ?? '',
+        optimisticEthereum: process.env.OPSCAN_API_KEY ?? '',
     }
   }
 };
