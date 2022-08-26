@@ -40,14 +40,18 @@ contract PriceOracleProxyIB is PriceOracle, Exponential, Denominations {
     /// @notice Band Reference
     mapping(address => ReferenceInfo) public references;
 
-    /// @notice The v1 price oracle, maintain by CREAM
-    V1PriceOracleInterface public v1PriceOracle;
-
     /// @notice The ChainLink registry address
     FeedRegistryInterface public reg;
 
     /// @notice The BAND reference address
     StdReferenceInterface public ref;
+
+    /// @notice The v1 price oracle, maintained by Iron Bank
+    /// @dev v1PriceOracle only provides price for deprecated markets (not supported by ChainLink and Band)
+    V1PriceOracleInterface public v1PriceOracle;
+
+    /// @notice Deprecated markets that use v1 oracle
+    mapping(address => bool) public deprecatedMarkets;
 
     /// @notice Quote symbol we used for BAND reference contract
     string public constant QUOTE_SYMBOL = "USD";
@@ -98,15 +102,19 @@ contract PriceOracleProxyIB is PriceOracle, Exponential, Denominations {
         }
 
         // Get price from v1.
-        return getPriceFromV1(underlying);
+        if (deprecatedMarkets[underlying]) {
+            return getPriceFromV1(underlying);
+        }
+
+        revert("no price");
     }
 
-    /*** Internal fucntions ***/
+    /*** Internal functions ***/
 
     /**
      * @notice Get price from ChainLink
      * @param base The base token that ChainLink aggregator gets the price of
-     * @param quote The quote token, currenlty support ETH and USD
+     * @param quote The quote token, currently support ETH and USD
      * @return The price, scaled by 1e18
      */
     function getPriceFromChainlink(address base, address quote) internal view returns (uint256) {
@@ -156,6 +164,7 @@ contract PriceOracleProxyIB is PriceOracle, Exponential, Denominations {
     event ReferenceUpdated(address tokenAddress, string symbol, bool isUsed);
     event SetGuardian(address guardian);
     event SetAdmin(address admin);
+    event DeprecatedMarketUpdated(address tokenAddress, bool isDeprecated);
 
     /**
      * @notice Set guardian for price oracle proxy
@@ -173,6 +182,7 @@ contract PriceOracleProxyIB is PriceOracle, Exponential, Denominations {
      */
     function _setAdmin(address _admin) external {
         require(msg.sender == admin, "only the admin may set new admin");
+        require(_admin != address(0), "invalid admin");
         admin = _admin;
         emit SetAdmin(admin);
     }
@@ -188,22 +198,59 @@ contract PriceOracleProxyIB is PriceOracle, Exponential, Denominations {
         address[] calldata bases,
         address[] calldata quotes
     ) external {
-        require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
+        require(msg.sender == admin, "only the admin may set the aggregators");
         require(tokenAddresses.length == bases.length && tokenAddresses.length == quotes.length, "mismatched data");
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
             bool isUsed;
             if (bases[i] != address(0)) {
-                require(msg.sender == admin, "guardian may only clear the aggregator");
                 require(quotes[i] == Denominations.ETH || quotes[i] == Denominations.USD, "unsupported denomination");
                 isUsed = true;
 
-                // Make sure the aggregator exists.
+                // Make sure the aggregator works.
                 address aggregator = reg.getFeed(bases[i], quotes[i]);
                 require(reg.isFeedEnabled(aggregator), "aggregator not enabled");
+
+                (, int256 price, , , ) = reg.latestRoundData(bases[i], quotes[i]);
+                require(price > 0, "invalid price");
             }
             aggregators[tokenAddresses[i]] = AggregatorInfo({base: bases[i], quote: quotes[i], isUsed: isUsed});
             emit AggregatorUpdated(tokenAddresses[i], bases[i], quotes[i], isUsed);
         }
+    }
+
+    /**
+     * @notice Disable ChainLink aggregator
+     * @param tokenAddress The underlying token
+     */
+    function _disableAggregator(address tokenAddress) external {
+        require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may disable the aggregator");
+
+        AggregatorInfo storage aggregatorInfo = aggregators[tokenAddress];
+        require(aggregatorInfo.isUsed, "aggregator not used");
+
+        aggregatorInfo.isUsed = false;
+        emit AggregatorUpdated(tokenAddress, aggregatorInfo.base, aggregatorInfo.quote, aggregatorInfo.isUsed);
+    }
+
+    /**
+     * @notice Enable ChainLink aggregator
+     * @param tokenAddress The underlying token
+     */
+    function _enableAggregator(address tokenAddress) external {
+        require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may enable the aggregator");
+
+        AggregatorInfo storage aggregatorInfo = aggregators[tokenAddress];
+        require(!aggregatorInfo.isUsed, "aggregator is already used");
+
+        // Make sure the aggregator works.
+        address aggregator = reg.getFeed(aggregatorInfo.base, aggregatorInfo.quote);
+        require(reg.isFeedEnabled(aggregator), "aggregator not enabled");
+
+        (, int256 price, , , ) = reg.latestRoundData(aggregatorInfo.base, aggregatorInfo.quote);
+        require(price > 0, "invalid price");
+
+        aggregatorInfo.isUsed = true;
+        emit AggregatorUpdated(tokenAddress, aggregatorInfo.base, aggregatorInfo.quote, aggregatorInfo.isUsed);
     }
 
     /**
@@ -212,20 +259,69 @@ contract PriceOracleProxyIB is PriceOracle, Exponential, Denominations {
      * @param symbols The list of symbols used by Band reference
      */
     function _setReferences(address[] calldata tokenAddresses, string[] calldata symbols) external {
-        require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the references");
+        require(msg.sender == admin, "only the admin may set the references");
         require(tokenAddresses.length == symbols.length, "mismatched data");
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
             bool isUsed;
             if (bytes(symbols[i]).length != 0) {
-                require(msg.sender == admin, "guardian may only clear the reference");
                 isUsed = true;
 
                 // Make sure we could get the price.
-                getPriceFromBAND(symbols[i]);
+                StdReferenceInterface.ReferenceData memory data = ref.getReferenceData(symbols[i], QUOTE_SYMBOL);
+                require(data.rate > 0, "invalid price");
             }
 
             references[tokenAddresses[i]] = ReferenceInfo({symbol: symbols[i], isUsed: isUsed});
             emit ReferenceUpdated(tokenAddresses[i], symbols[i], isUsed);
+        }
+    }
+
+    /**
+     * @notice Disable Band reference
+     * @param tokenAddress The underlying token
+     */
+    function _disableReference(address tokenAddress) external {
+        require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may disable the reference");
+
+        ReferenceInfo storage referenceInfo = references[tokenAddress];
+        require(referenceInfo.isUsed, "reference not used");
+
+        referenceInfo.isUsed = false;
+        emit ReferenceUpdated(tokenAddress, referenceInfo.symbol, referenceInfo.isUsed);
+    }
+
+    /**
+     * @notice Enable Band reference
+     * @param tokenAddress The underlying token
+     */
+    function _enableReference(address tokenAddress) external {
+        require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may enable the reference");
+
+        ReferenceInfo storage referenceInfo = references[tokenAddress];
+        require(!referenceInfo.isUsed, "reference is already used");
+
+        // Make sure we could get the price.
+        StdReferenceInterface.ReferenceData memory data = ref.getReferenceData(referenceInfo.symbol, QUOTE_SYMBOL);
+        require(data.rate > 0, "invalid price");
+
+        referenceInfo.isUsed = true;
+        emit ReferenceUpdated(tokenAddress, referenceInfo.symbol, referenceInfo.isUsed);
+    }
+
+    /**
+     * @notice Update deprecated markets for multiple tokens
+     * @param tokenAddresses The list of underlying tokens
+     * @param deprecated The list of tokens are deprecated or not
+     */
+    function _updateDeprecatedMarkets(address[] calldata tokenAddresses, bool[] calldata deprecated) external {
+        require(msg.sender == admin, "only the admin may update the deprecated markets");
+        require(tokenAddresses.length == deprecated.length, "mismatched data");
+        for (uint256 i = 0; i < tokenAddresses.length; i++) {
+            if (deprecatedMarkets[tokenAddresses[i]] != deprecated[i]) {
+                deprecatedMarkets[tokenAddresses[i]] = deprecated[i];
+
+                emit DeprecatedMarketUpdated(tokenAddresses[i], deprecated[i]);
+            }
         }
     }
 }
