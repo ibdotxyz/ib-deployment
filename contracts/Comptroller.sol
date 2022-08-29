@@ -39,8 +39,8 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     /// @notice Emitted when price oracle is changed
     event NewPriceOracle(PriceOracle oldPriceOracle, PriceOracle newPriceOracle);
 
-    /// @notice Emitted when pause guardian is changed
-    event NewPauseGuardian(address oldPauseGuardian, address newPauseGuardian);
+    /// @notice Emitted when guardian is changed
+    event NewGuardian(address oldGuardian, address newGuardian);
 
     /// @notice Emitted when liquidity mining module is changed
     event NewLiquidityMining(address oldLiquidityMining, address newLiquidityMining);
@@ -218,12 +218,12 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     }
 
     /**
-     * @notice Return a specific market is listed or delisted
+     * @notice Return a specific market is listed or soft delisted
      * @param cTokenAddress The address of the asset to be checked
-     * @return Whether or not the market is listed or delisted
+     * @return Whether or not the market is listed or soft delisted
      */
-    function isMarketListedOrDelisted(address cTokenAddress) public view returns (bool) {
-        return markets[cTokenAddress].isListed || isMarkertDelisted[cTokenAddress];
+    function isMarketListedOrSoftDelisted(address cTokenAddress) public view returns (bool) {
+        return markets[cTokenAddress].isListed || isMarketSoftDelisted[cTokenAddress];
     }
 
     /*** Policy Hooks ***/
@@ -325,7 +325,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         address redeemer,
         uint256 redeemTokens
     ) internal view returns (uint256) {
-        require(isMarketListedOrDelisted(cToken), "market not listed");
+        require(isMarketListedOrSoftDelisted(cToken), "market not listed");
         require(!isCreditAccount(redeemer, cToken), "credit account cannot redeem");
 
         /* If the redeemer is not 'in' the market, then we can bypass the liquidity check */
@@ -471,7 +471,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         // Shh - currently unused
         repayAmount;
 
-        require(isMarketListedOrDelisted(cToken), "market not listed");
+        require(isMarketListedOrSoftDelisted(cToken), "market not listed");
 
         if (isCreditAccount(borrower, cToken)) {
             require(borrower == payer, "cannot repay on behalf of credit account");
@@ -534,7 +534,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         liquidator;
 
         require(
-            isMarketListedOrDelisted(cTokenBorrowed) && isMarketListedOrDelisted(cTokenCollateral),
+            isMarketListedOrSoftDelisted(cTokenBorrowed) && isMarketListedOrSoftDelisted(cTokenCollateral),
             "market not listed"
         );
 
@@ -600,13 +600,13 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     ) external returns (uint256) {
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!seizeGuardianPaused, "seize is paused");
-        require(!isCreditAccount(borrower, cTokenBorrowed), "cannot sieze from credit account");
+        require(!isCreditAccount(borrower, cTokenBorrowed), "cannot seize from credit account");
 
         // Shh - currently unused
         seizeTokens;
 
         require(
-            isMarketListedOrDelisted(cTokenBorrowed) && isMarketListedOrDelisted(cTokenCollateral),
+            isMarketListedOrSoftDelisted(cTokenBorrowed) && isMarketListedOrSoftDelisted(cTokenCollateral),
             "market not listed"
         );
         require(
@@ -889,7 +889,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             CToken asset = assets[i];
 
             // Skip the asset if it is not listed or soft delisted.
-            if (!isMarketListedOrDelisted(address(asset))) {
+            if (!isMarketListedOrSoftDelisted(address(asset))) {
                 continue;
             }
 
@@ -1109,7 +1109,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
      */
     function _supportMarket(CToken cToken, Version version) external returns (uint256) {
         require(msg.sender == admin, "admin only");
-        require(!isMarketListedOrDelisted(address(cToken)), "market already listed or delisted");
+        require(!isMarketListedOrSoftDelisted(address(cToken)), "market already listed or soft delisted");
 
         cToken.isCToken(); // Sanity check to make sure its really a CToken
 
@@ -1125,7 +1125,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     /**
      * @notice Remove the market from the markets mapping
      * @param cToken The address of the market (token) to delist
-     * @param force If True, hard delist the market by not adding to `isMarkertDelisted`
+     * @param force If True, hard delist the market by not adding to `isMarketSoftDelisted`
      */
     function _delistMarket(CToken cToken, bool force) external {
         require(msg.sender == admin, "admin only");
@@ -1140,19 +1140,40 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         if (!force) {
             // Soft delist.
             require(isMarketListed(address(cToken)), "market not listed");
-            isMarkertDelisted[address(cToken)] = true;
+
+            // Add the market to soft delisted markets.
+            isMarketSoftDelisted[address(cToken)] = true;
+            softDelistedMarkets.push(address(cToken));
         } else {
             // Hard delist.
-            require(isMarketListedOrDelisted(address(cToken)), "market not listed or soft delisted");
-        }
-        delete markets[address(cToken)];
+            require(isMarketListedOrSoftDelisted(address(cToken)), "market not listed or soft delisted");
 
-        for (uint256 i = 0; i < allMarkets.length; i++) {
-            if (allMarkets[i] == cToken) {
-                allMarkets[i] = allMarkets[allMarkets.length - 1];
-                delete allMarkets[allMarkets.length - 1];
-                allMarkets.length--;
-                break;
+            if (isMarketSoftDelisted[address(cToken)]) {
+                // Remove the market from soft delisted markets.
+                isMarketSoftDelisted[address(cToken)] = false;
+
+                for (uint256 i = 0; i < softDelistedMarkets.length; i++) {
+                    if (softDelistedMarkets[i] == address(cToken)) {
+                        softDelistedMarkets[i] = softDelistedMarkets[softDelistedMarkets.length - 1];
+                        delete softDelistedMarkets[softDelistedMarkets.length - 1];
+                        softDelistedMarkets.length--;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (isMarketListed(address(cToken))) {
+            // Remove the market from markets.
+            delete markets[address(cToken)];
+
+            for (uint256 i = 0; i < allMarkets.length; i++) {
+                if (allMarkets[i] == cToken) {
+                    allMarkets[i] = allMarkets[allMarkets.length - 1];
+                    delete allMarkets[allMarkets.length - 1];
+                    allMarkets.length--;
+                    break;
+                }
             }
         }
 
@@ -1167,14 +1188,14 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     }
 
     /**
-     * @notice Set the given supply caps for the given cToken markets. Supplying that brings total supplys to or above supply cap will revert.
-     * @dev Admin or pauseGuardian function to set the supply caps. A supply cap of 0 corresponds to unlimited supplying. If the total borrows
+     * @notice Set the given supply caps for the given cToken markets. Supplying that brings total supplies to or above supply cap will revert.
+     * @dev Admin or guardian function to set the supply caps. A supply cap of 0 corresponds to unlimited supplying. If the total borrows
      *      already exceeded the cap, it will prevent anyone to borrow.
      * @param cTokens The addresses of the markets (tokens) to change the supply caps for
      * @param newSupplyCaps The new supply cap values in underlying to be set. A value of 0 corresponds to unlimited supplying.
      */
     function _setMarketSupplyCaps(CToken[] calldata cTokens, uint256[] calldata newSupplyCaps) external {
-        require(msg.sender == admin || msg.sender == pauseGuardian, "admin or guardian only");
+        require(msg.sender == admin || msg.sender == guardian, "admin or guardian only");
 
         uint256 numMarkets = cTokens.length;
         uint256 numSupplyCaps = newSupplyCaps.length;
@@ -1189,13 +1210,13 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
     /**
      * @notice Set the given borrow caps for the given cToken markets. Borrowing that brings total borrows to or above borrow cap will revert.
-     * @dev Admin or pauseGuardian function to set the borrow caps. A borrow cap of 0 corresponds to unlimited borrowing. If the total supplies
+     * @dev Admin or guardian function to set the borrow caps. A borrow cap of 0 corresponds to unlimited borrowing. If the total supplies
      *      already exceeded the cap, it will prevent anyone to mint.
      * @param cTokens The addresses of the markets (tokens) to change the borrow caps for
      * @param newBorrowCaps The new borrow cap values in underlying to be set. A value of 0 corresponds to unlimited borrowing.
      */
     function _setMarketBorrowCaps(CToken[] calldata cTokens, uint256[] calldata newBorrowCaps) external {
-        require(msg.sender == admin || msg.sender == pauseGuardian, "admin or guardian only");
+        require(msg.sender == admin || msg.sender == guardian, "admin or guardian only");
 
         uint256 numMarkets = cTokens.length;
         uint256 numBorrowCaps = newBorrowCaps.length;
@@ -1209,23 +1230,23 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     }
 
     /**
-     * @notice Admin function to change the Pause Guardian
-     * @param newPauseGuardian The address of the new Pause Guardian
+     * @notice Admin function to change the Guardian
+     * @param newGuardian The address of the new Guardian
      * @return uint 0=success, otherwise a failure. (See enum Error for details)
      */
-    function _setPauseGuardian(address newPauseGuardian) public returns (uint256) {
+    function _setGuardian(address newGuardian) public returns (uint256) {
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_PAUSE_GUARDIAN_OWNER_CHECK);
         }
 
         // Save current value for inclusion in log
-        address oldPauseGuardian = pauseGuardian;
+        address oldGuardian = guardian;
 
-        // Store pauseGuardian with value newPauseGuardian
-        pauseGuardian = newPauseGuardian;
+        // Store guardian with value newGuardian
+        guardian = newGuardian;
 
-        // Emit NewPauseGuardian(OldPauseGuardian, NewPauseGuardian)
-        emit NewPauseGuardian(oldPauseGuardian, pauseGuardian);
+        // Emit NewGuardian(OldGuardian, NewGuardian)
+        emit NewGuardian(oldGuardian, guardian);
 
         return uint256(Error.NO_ERROR);
     }
@@ -1268,7 +1289,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
     function _setMintPaused(CToken cToken, bool state) public returns (bool) {
         require(isMarketListed(address(cToken)), "market not listed");
-        require(msg.sender == pauseGuardian || msg.sender == admin, "guardian or admin only");
+        require(msg.sender == guardian || msg.sender == admin, "guardian or admin only");
         require(msg.sender == admin || state == true, "admin only");
 
         mintGuardianPaused[address(cToken)] = state;
@@ -1278,7 +1299,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
     function _setBorrowPaused(CToken cToken, bool state) public returns (bool) {
         require(isMarketListed(address(cToken)), "market not listed");
-        require(msg.sender == pauseGuardian || msg.sender == admin, "guardian or admin only");
+        require(msg.sender == guardian || msg.sender == admin, "guardian or admin only");
         require(msg.sender == admin || state == true, "admin only");
 
         borrowGuardianPaused[address(cToken)] = state;
@@ -1288,7 +1309,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
     function _setFlashloanPaused(CToken cToken, bool state) public returns (bool) {
         require(isMarketListed(address(cToken)), "market not listed");
-        require(msg.sender == pauseGuardian || msg.sender == admin, "guardian or admin only");
+        require(msg.sender == guardian || msg.sender == admin, "guardian or admin only");
         require(msg.sender == admin || state == true, "admin only");
 
         flashloanGuardianPaused[address(cToken)] = state;
@@ -1297,7 +1318,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _setTransferPaused(bool state) public returns (bool) {
-        require(msg.sender == pauseGuardian || msg.sender == admin, "guardian or admin only");
+        require(msg.sender == guardian || msg.sender == admin, "guardian or admin only");
         require(msg.sender == admin || state == true, "admin only");
 
         transferGuardianPaused = state;
@@ -1306,7 +1327,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _setSeizePaused(bool state) public returns (bool) {
-        require(msg.sender == pauseGuardian || msg.sender == admin, "guardian or admin only");
+        require(msg.sender == guardian || msg.sender == admin, "guardian or admin only");
         require(msg.sender == admin || state == true, "admin only");
 
         seizeGuardianPaused = state;
@@ -1321,6 +1342,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
     /**
      * @notice Sets protocol's credit limit by market
+     * @dev Setting credit limit to 0 would change the protocol to a normal account
      * @param protocol The address of the protocol
      * @param market The market
      * @param creditLimit The credit limit
@@ -1330,16 +1352,31 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         address market,
         uint256 creditLimit
     ) public {
-        require(
-            msg.sender == admin || msg.sender == creditLimitManager || msg.sender == pauseGuardian,
-            "admin or credit limit manager or pause guardian only"
-        );
-        require(isMarketListed(market), "market not listed");
+        require(msg.sender == admin || msg.sender == creditLimitManager, "admin or credit limit manager only");
 
-        if (creditLimits[protocol][market] == 0 && creditLimit != 0) {
-            // Only admin or credit limit manager could set a new credit limit.
-            require(msg.sender == admin || msg.sender == creditLimitManager, "admin or credit limit manager only");
-        }
+        _setCreditLimitInternal(protocol, market, creditLimit);
+    }
+
+    /**
+     * @notice Pause protocol's credit limit by market
+     * @param protocol The address of the protocol
+     * @param market The market
+     */
+    function _pauseCreditLimit(address protocol, address market) public {
+        require(msg.sender == guardian, "guardian only");
+        require(isCreditAccount(protocol, market), "cannot pause non-credit account");
+
+        // We set the credit limit to a very small amount (1 Wei) to avoid the protocol becoming a normal account.
+        // Normal account could be liquidated or repaid, which might cause some additional problem.
+        _setCreditLimitInternal(protocol, market, 1);
+    }
+
+    function _setCreditLimitInternal(
+        address protocol,
+        address market,
+        uint256 creditLimit
+    ) internal {
+        require(isMarketListed(market), "market not listed");
 
         creditLimits[protocol][market] = creditLimit;
         emit CreditLimitChanged(protocol, market, creditLimit);
@@ -1352,6 +1389,15 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
      */
     function getAllMarkets() public view returns (CToken[] memory) {
         return allMarkets;
+    }
+
+    /**
+     * @notice Return all of the soft delisted markets
+     * @dev The automatic getter may be used to access an individual market.
+     * @return The list of market addresses
+     */
+    function getAllSoftDelistedMarkets() public view returns (address[] memory) {
+        return softDelistedMarkets;
     }
 
     function getBlockNumber() public view returns (uint256) {
