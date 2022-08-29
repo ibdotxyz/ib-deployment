@@ -2295,5 +2295,6 @@
       "stateMutability": "nonpayable",
       "type": "function"
     }
-  ]
+  ],
+  "numDeployments": 2
 }
