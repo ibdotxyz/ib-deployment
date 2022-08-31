@@ -40,7 +40,19 @@ const config: HardhatUserConfig = {
     },
     wrappedNative: {
       avalanche: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
-    }
+    },
+    v1PriceOracle: {
+      hardhat: '0x3aBce8F1DB258fBc64827b0926e14A0F90525CF7',
+      mainnet: '0x3aBce8F1DB258fBc64827b0926e14A0F90525CF7',
+    },
+    chainlinkRegistry: {
+      hardhat: '0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf',
+      mainnet: '0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf',
+    },
+    bandReference: {
+      hardhat: '0xDA7a001b254CD22e46d3eAB04d937489c93174C3',
+      mainnet: '0xDA7a001b254CD22e46d3eAB04d937489c93174C3',
+    },
   },
   networks: {
     hardhat: {
