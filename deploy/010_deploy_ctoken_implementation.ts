@@ -12,10 +12,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true
   });
 
+  /*
   await deploy('CCollateralCapErc20Delegate', {
     from: deployer,
     log: true
   });
+  */
 
 };
 export default func;
