@@ -17,10 +17,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true
   });
 
-  await deploy('CCollateralCapErc20NoInterestDelegate', {
-    from: deployer,
-    log: true
-  });
+  //await deploy('CCollateralCapErc20NoInterestDelegate', {
+  //  from: deployer,
+  //  log: true
+  //});
 
 };
 export default func;
