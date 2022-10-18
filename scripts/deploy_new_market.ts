@@ -8,9 +8,9 @@ enum IRM {
   Gov = 'GovIRM'
 }
 
-const crSymbol = 'iUST';
-const crName = 'Iron Bank UST (Wormhole)';
-const underlyingAddress = '0xb599c3590F42f8F995ECfa0f85D2980B76862fc1';
+const crSymbol = 'iUSDT';
+const crName = 'Iron Bank TetherToken';
+const underlyingAddress = '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7';
 const interestRateModel = IRM.Stable;
 const exchangeRate = '0.02';
 
