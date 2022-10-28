@@ -104,6 +104,28 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true
   });
 
+  // deploy IBFF IRM
+  baseRatePerYear = 0;
+  multiplierPerYear = parseEther('0.4');
+  jumpMultiplierPerYear = parseEther('8');
+  kink1 = parseEther('0.8');
+  kink2 = parseEther('0.9');
+  roof =  parseEther('1');
+
+  await deploy('IBFFIRM', {
+    from: deployer,
+    contract: 'TripleSlopeRateModel',
+    args: [
+      baseRatePerYear,
+      multiplierPerYear,
+      jumpMultiplierPerYear,
+      kink1,
+      kink2,
+      roof,
+    ],
+    log: true
+  });
+
 };
 export default func;
 func.tags = ['TripleSlopeRateModel'];
