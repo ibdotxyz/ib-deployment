@@ -17,7 +17,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   let roof;
 
   baseRatePerYear = 0;
-  multiplierPerYear = parseEther('0.13');
+  multiplierPerYear = parseEther('0.104');
   jumpMultiplierPerYear = parseEther('8');
   kink1 = parseEther('0.8');
   kink2 = parseEther('0.9');
